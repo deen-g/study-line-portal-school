@@ -30,6 +30,11 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
+    clearAuthUser () {
+      bus.$emit('emit:account:authenticate', false)
+      this.auth = {}
+      this.user = {}
+    },
     setAuthUser (data) {
       bus.$emit('emit:account:authenticate', Object.hasOwnProperty.call(data.user, '_id'))
       this.auth = data

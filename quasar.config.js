@@ -73,6 +73,7 @@ module.exports = configure(async function (ctx){
       // analyze: true,
       env :{
         auth: 'sl-auth-token',
+        schoolToken: 'sl-school-token',
         portal :'school',
         uri :ctx.dev ? 'http://localhost:3000' : 'https://stu-line-api.herokuapp.com',
         socket :ctx.dev ? 'http://localhost:3030' : 'https://stu-line-services.herokuapp.com',
@@ -82,7 +83,7 @@ module.exports = configure(async function (ctx){
       // ignorePublicFolder: true,
       // minify: false,
       // polyfillModulePreload: true,
-      distDir: ctx.mode.spa ? 'public' : null,
+      distDir: ctx.mode.spa ? 'public' : `dist/${ctx.modeName}`,
 
       // extendViteConf (viteConf) {},
       // viteVuePluginOptions: {},
@@ -95,7 +96,7 @@ module.exports = configure(async function (ctx){
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#devServer
     devServer :{
       https: !ctx.dev,
-      port: 9001,
+      // port: 9001,
       open :false // opens browser window automatically
     },
 

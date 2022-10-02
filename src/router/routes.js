@@ -2,9 +2,17 @@
 const routes = [
   {
     path: '/',
+    component: () => import('layouts/no-app-layout.vue'),
+    children: [
+      { path: '', name:'school-access',component: () => import('pages/authentication/school-access-page.vue') },
+      { path: '/login', name:'sign-in',component: () => import('pages/authentication/signin-page.vue') }
+    ]
+  },
+  {
+    path: '/authorized',
     component: () => import('layouts/app-layout.vue'),
     children: [
-      { path: '', component: () => import('pages/IndexPage.vue') }
+      { path: '',name:'dashboard-page', component: () => import('pages/IndexPage.vue') }
     ]
   },
 

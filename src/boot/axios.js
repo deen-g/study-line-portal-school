@@ -8,7 +8,7 @@ import { notifications } from "boot/notification"
 // good idea to move this instance creation inside of the
 // "export default () => {}" function below (which runs individually
 // for each client)
-const api = axios.create({
+const rest = axios.create({
   timeout :5000,
   headers :{
     'Content-Type' :'application/json',
@@ -16,15 +16,19 @@ const api = axios.create({
   }
 })
 export default boot(async ({app}) => {
-  api.defaults.baseURL = process.env.uri
-  console.log('axios url:', api.defaults.baseURL)
+  rest.defaults.baseURL = process.env.uri+'/api/v1'
+  console.log('axios url:', rest.defaults.baseURL)
   // for use inside Vue files (Options API) through this.$axios and this.$api
 // Add a request interceptor
-  api.interceptors.request.use(function (config){
+  rest.interceptors.request.use(function (config){
     // Do something before request is sent
     let token = localStorage.getItem(process.env.auth)
     if(token){
-      config.headers['x-auth-token'] = `${token}`;
+      config.headers['x-authorization-token'] = `${token}`;
+    }
+    let school = localStorage.getItem(process.env.schoolToken)
+    if(school){
+      config.headers['x-school-token'] = `${school}`;
     }
     return config;
   }, function (error){
@@ -32,7 +36,7 @@ export default boot(async ({app}) => {
     return Promise.reject(error);
   }, {synchronous :true});
 // Add a response interceptor
-  api.interceptors.response.use(function (response){
+  rest.interceptors.response.use(function (response){
     // Any status code that lie within the range of 2xx cause this function to trigger
     // Do something with response data
     if(response.data){
@@ -68,9 +72,9 @@ export default boot(async ({app}) => {
   // ^ ^ ^ this will allow you to use this.$axios (for Vue Options API form)
   //       so you won't necessarily have to import axios in each vue file
 
-  app.config.globalProperties.$api = api
+  app.config.globalProperties.$api = rest
   // ^ ^ ^ this will allow you to use this.$api (for Vue Options API form)
   //       so you can easily perform requests against your app's API
 })
 
-export { api }
+export { rest }

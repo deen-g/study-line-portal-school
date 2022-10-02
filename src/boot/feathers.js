@@ -4,7 +4,6 @@ import feathers from '@feathersjs/feathers'
 import socketio from '@feathersjs/socketio-client'
 import authentication from '@feathersjs/authentication-client'
 import { paramsForServer } from 'feathers-graph-populate'
-import controller from 'src/controllers'
 
 // eslint-disable-next-line no-unused-vars
 import { bus } from 'boot/global-event-bus'
@@ -35,7 +34,6 @@ export default boot(async ({app}) => {
     console.log('disconnect', reason)
     bus.$emit('modules:is-connected', reason)
   })
-  controller.config(client)
   await client.io.on('connection', async () => {
     console.log('connection')
   })

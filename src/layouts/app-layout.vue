@@ -1,6 +1,21 @@
 <template>
   <q-layout view="lHh Lpr lFf">
     <q-header bordered class="bg-grey-2 text-primary">
+      <q-bar class="q-electron-drag bg-primary text-white">
+        <q-icon name="laptop_chromebook" />
+        <div class="text-center" style="font-size: 13px">
+        <span><u style="color: #21BA45; font-size: 13px">Study</u><span
+          style="color: #cce1f6; font-size: 13px">Line</span></span>
+          v{{ $q.version }}
+        </div>
+
+        <q-space />
+
+        <q-btn dense flat icon="minimize" @click="minimize" />
+        <q-btn dense flat icon="crop_square" @click="toggleMaximize" />
+        <q-btn dense flat icon="mdi-fullscreen" @click="toggleFullscreen" />
+        <q-btn dense flat icon="close" @click="closeApp" />
+      </q-bar>
       <q-toolbar>
         <q-btn
           flat
@@ -119,6 +134,9 @@ import navigations from 'src/constants/navigations'
 import PanelProfileComp from 'components/panels/panel-profile-comp.vue'
 import { bus } from 'boot/global-event-bus'
 import { useAuthStore } from "stores/auth"
+import apis from "src/constants/apis"
+import { rest } from "boot/axios"
+import { notifications } from "boot/notification"
 
 export default defineComponent({
   name: 'AuthLayout',
@@ -152,7 +170,14 @@ export default defineComponent({
       leftDrawerOpen.value = false
     }
     const logout = async () => {
-      await router.push({ name: 'index-page', query: { page: 'home-page' } })
+      const user = auth.getUser
+      const logout = await rest.get(apis.authorized.logout + `?id=${user._id}`)
+      if(logout.status){
+        window.localStorage.removeItem(process.env.auth)
+        notifications.positive('you are logged out')
+        await auth.clearAuthUser()
+        await router.push({name :'sign-in'})
+      }
     }
     onMounted(async () => {
       bus.$on('auth:is_logged_in', () => {
@@ -169,6 +194,29 @@ export default defineComponent({
     const toggleRightDrawer = () => {
       rightDrawerOpen.value = !rightDrawerOpen.value
     }
+    function minimize () {
+      if (process.env.MODE === 'electron') {
+        console.log(window.winAPI)
+        window.winAPI.minimize()
+      }
+    }
+
+    function toggleMaximize () {
+      if (process.env.MODE === 'electron') {
+        window.winAPI.toggleMaximize()
+      }
+    }
+
+    function toggleFullscreen () {
+      if (process.env.MODE === 'electron') {
+        window.winAPI.toggleFullscreen()
+      }
+    }
+    function closeApp () {
+      if (process.env.MODE === 'electron') {
+        window.winAPI.close()
+      }
+    }
     return {
       page,
       essentialLinks: list,
@@ -179,7 +227,7 @@ export default defineComponent({
       auth,
       logout,
       login,
-      closeDrawer
+      closeDrawer,minimize, toggleMaximize,toggleFullscreen, closeApp
     }
   }
 })
