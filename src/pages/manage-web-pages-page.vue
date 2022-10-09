@@ -56,6 +56,7 @@
         </div>
         <q-space/>
         <q-btn @click="alert = true" dense flat icon="add"/>
+        <q-btn @click="openUploadDialog" dense flat icon="cloud_upload"/>
       </q-bar>
       <q-card-section class="no-padding no-margin" style="height: 150px">
         background
@@ -79,8 +80,8 @@
           <q-separator vertical/>
           <div class="col-grow">
             <q-card flat class="no-padding no-margin" style="min-height: 60vh">
-              <q-card-section >
-                content
+              <q-card-section class="no-padding">
+                <html-editor/>
               </q-card-section>
             </q-card>
           </div>
@@ -88,7 +89,7 @@
         </div>
       </q-card-section>
     </q-card>
-    <q-dialog  v-model="alert">
+    <q-dialog v-model="alert">
       <q-card style="max-width: 300px" class="bg-grey-5">
         <q-card-section>
           <div class="text-h6">Add Page</div>
@@ -118,7 +119,8 @@
           </q-item>
           <q-item class="q-pa-none" v-if="input.type ==='sub-page'">
             <q-item-section>
-              <q-select standout="bg-grey-7 text-white" dense v-model="input.sub_link_to" :options="list_options" label="Standard"/>
+              <q-select standout="bg-grey-7 text-white" dense v-model="input.sub_link_to" :options="list_options"
+                        label="Standard"/>
             </q-item-section>
           </q-item>
           <q-item class="q-pa-none">
@@ -157,6 +159,19 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+    <q-dialog v-model="document_upload_dialog" position="right">
+      <q-card style="width: 450px;" class="full-height">
+        <q-card-section class="row items-start no-wrap no-padding">
+          <documents-upload :url="uploadUrl" thumbnails :formfields="[{name: 'name', value: 'web-contents'}]" :callback="onUploaded"/>
+        </q-card-section>
+        <q-separator spaced inset/>
+        <q-card-section class="row items-start no-wrap no-padding">
+          <q-list v-if="documents.length>0" bordered padding>
+            <document-items v-for="(item, index) in documents" :key="index" :document="item"/>
+          </q-list>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -165,14 +180,23 @@ import { computed, onMounted, ref } from "vue"
 import { rest } from "boot/axios"
 import apis from "src/constants/apis"
 import EssentialLink from 'components/PortalEssentialLink.vue'
+import DocumentsUpload from "components/documents-upload.vue"
+import DocumentItems from "components/items/document-items.vue"
+import HtmlEditor from "components/html-editor.vue"
+
 export default {
   // name: 'PageName',
   components :{
+    HtmlEditor,
+    DocumentItems,
+    DocumentsUpload,
     EssentialLink
   },
   setup(){
     const list = ref([])
-
+    const documents = ref([])
+    const document_upload_dialog = ref(false)
+    const uploadUrl = ref(apis.authorized.webpages.documents.uploads)
     const input = ref({
       type :'main-page',
       icon :{
@@ -196,6 +220,10 @@ export default {
         list.value = request.data.content
       }
     })
+    const openUploadDialog = async () => {
+      document_upload_dialog.value = true
+      await loadDocument()
+    }
     const onSubmit = async () => {
       let {title, caption, type, icon, sub_link_to} = input.value
       let link = title.replace(' ', '-').toLowerCase()
@@ -209,7 +237,7 @@ export default {
       if(type === 'sub-page'){
         list.value.forEach((item) => {
           if(item.title === sub_link_to.value){
-            if(item.link)delete item.link
+            if(item.link) delete item.link
             if(!item.list) item.list = []
             item.list.push({...holder})
           }
@@ -221,12 +249,27 @@ export default {
       console.log(request)
     }
 
+    const onUploaded = async (result) => {
+      console.log(result)
+      await loadDocument()
+    }
+    const loadDocument = async () => {
+      let request = await rest.get(apis.authorized.documents.webcontents)
+      if(request.status){
+        documents.value = request.data
+      }
+    }
     return {
-      navigate:(a)=>{
+      navigate :(a) => {
         console.log(a)
       },
+      openUploadDialog,
       onSubmit,
+      documents,
+      onUploaded,
+      document_upload_dialog,
       alert :ref(false),
+      uploadUrl,
       list,
       input,
       list_options,
