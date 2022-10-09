@@ -3,9 +3,9 @@
     <!-- content -->
     <div class="fit row wrap justify-center items-start content-start">
       <div class="col-lg-3 col-md-5 col-sm-8 col-xs-12 self-center" style="padding-top: 135px;">
-        <q-card flat class="text-center text-uppercase text-primary">
+        <q-card flat class="text-center text-primary">
           <q-card-section>
-            <div>
+            <div class="text-uppercase">
               {{school.name}}<br/>
               {{school.code}}<br/>
               {{school.address}}
@@ -21,10 +21,9 @@
             >
               <q-input
                 filled
-                type="email"
-                v-model="input.email"
+                v-model="input.username"
                 dense
-                label="Your email *"
+                label="Your username *"
               />
               <q-input
                 filled
@@ -62,38 +61,33 @@ export default {
     const router = useRouter()
     const school = ref({})
     onMounted(async () => {
-      let schoolToken = window.localStorage.getItem(process.env.schoolToken)
-      let request = await rest.get(apis.public.school.get + '/' + schoolToken)
-      if(!request.status){
-        await router.push({name :'school-access'})
-      }
-      auth.setSchool(request.data)
-      school.value = request.data
+      if(!auth.hasSchool)  await router.push({name :'school-access'})
+      school.value = auth.getSchool
       console.log(school.value)
     })
     const id_loading = ref(false)
     const input = ref({
-      email :'deen2@mailinator.com',
+      username :'SLMAA1.001',
       password :'123456789'
     })
 
     const login = async () => {
       // debugger
       id_loading.value = true
-      const login = await rest.post(apis.authentication.school.login, {...input.value})
+      const login = await rest.post(apis.public.school.login, {...input.value})
       console.log(login)
       id_loading.value = false
       if(login.status){
         let {data} = login
         auth.setAuthUser(data)
-        window.localStorage.setItem(process.env.auth, data.accessToken)
+        window.localStorage.setItem(process.env.auth, data.public_access_token)
         await router.push({name :'dashboard-page'})
       }
     }
 
     const onSubmit = async () => {
-      if(!input.value.email || input.value.email.length < 1){
-        return notifications.negative('please set your email')
+      if(!input.value.username || input.value.username.length < 1){
+        return notifications.negative('please set your username')
       }
       if(!input.value.password || input.value.password.length < 1){
         return notifications.negative('please set your password')

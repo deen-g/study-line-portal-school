@@ -1,40 +1,7 @@
 import { useAuthStore } from "stores/auth"
+import { can } from "src/constants/abilities"
 
-const routeList = [
-  {
-    hr :true
-  },
-  {
-    title :'Home',
-    icon :'home',
-    link :'index-page',
-    query :{page :'home-page'},
-    authorized :['web']
-  },
-  {
-    title :'About Us',
-    caption :'Little but on study line',
-    icon :'mdi-help-network',
-    link :'index-page',
-    query :{page :'about-page'},
-    authorized :['web']
-  },
-  {
-    title :'Services',
-    caption :'Our services and features',
-    icon :'mdi-face-agent',
-    link :'index-page',
-    query :{page :'services-page'},
-    authorized :['web']
-  },
-  {
-    title :'Contact Us',
-    caption :'Get connected in real time',
-    icon :'mdi-card-account-phone',
-    link :'index-page',
-    query :{page :'contact-us-page'},
-    authorized :['web']
-  },
+let routeList = [
   {
     hr :true
   },
@@ -60,16 +27,16 @@ const routeList = [
     ]
   },
   {
-    title :'School Manager',
+    title :'Configuration',
     icon :'school',
-    authorized :['web', 'auth', 'user::is::admin'],
+    authorized :['web', 'auth'],
     list :[
       {
         title :'School detail',
         caption :'create applications for schools',
         icon :'school',
         link :'school-profile',
-        authorized :['user::has::school']
+        authorized :[]
       },
       {
         title :'New school',
@@ -79,7 +46,36 @@ const routeList = [
         authorized :['user::create::school']
       }
     ]
+  },
+  {
+    title :'Management',
+    icon :'school',
+    authorized :['web', 'auth'],
+    list :[
+      {
+        title :'Page Management',
+        caption :'manage web pages',
+        icon :'school',
+        link :'web-pages-page',
+        authorized :[can.edit.school.page]
+      },
+      {
+        title :'next ',
+        icon :'school',
+        authorized :[can.assign.school.application],
+        list :[
+          {
+            title :'todo',
+            caption :'create applications for schools',
+            icon :'school',
+            link :'school-profile',
+            authorized :[]
+          }
+        ]
+      }
+    ]
   }
+
 ]
 const auth = useAuthStore()
 const processLink = (item) => {
@@ -88,7 +84,7 @@ const processLink = (item) => {
   if(item.authorized){
     item.authorized.forEach((i) => {
       if(check){
-        const user = auth.getUser
+        const user = auth.getAccount
         switch (i) {
           case 'web':
             console.log('is web')
@@ -97,27 +93,14 @@ const processLink = (item) => {
             check = auth.isLoggedIn
             break
           case 'user::is::student':
-            check = !user.is_school_admin
+            check = !user.is_super_admin
+
             break
-          case 'user::is::admin':
-            if(user.is_school_admin){
-              check = user.is_school_admin
-            } else {
-              check = false
-            }
-            break
-          case 'user::has::school':
-            if(auth.hasSchool){
-              let school_id = auth.getSchool._id
-              data.params = {id :school_id, type :'self'}
-              check = user.is_school_admin
-            } else {
-              check = false
-            }
-            break
-          case 'user::create::school':
-            if(!auth.hasSchool){
-              check = user.is_school_admin
+          default:
+            if(auth.getRoleAbilities){
+              let abilities = auth.getRoleAbilities
+              check = abilities.filter(f => f === i)
+              check = check.length > 0
             } else {
               check = false
             }
@@ -145,8 +128,11 @@ const configureLinks = (links, authorized = null) => {
   })
   return list
 }
-const links = () => {
-  let listings = configureLinks(routeList)
+const links = async (link) => {
+
+  let route = link.concat(routeList)
+  console.log(route)
+  let listings = configureLinks(route)
   return listings
 }
 export default {links}

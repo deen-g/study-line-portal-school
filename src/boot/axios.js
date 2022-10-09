@@ -24,7 +24,7 @@ export default boot(async ({app}) => {
     // Do something before request is sent
     let token = localStorage.getItem(process.env.auth)
     if(token){
-      config.headers['x-authorization-token'] = `${token}`;
+      config.headers['x-school-authorization-token'] = `${token}`;
     }
     let school = localStorage.getItem(process.env.schoolToken)
     if(school){

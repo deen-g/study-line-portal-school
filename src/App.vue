@@ -12,10 +12,15 @@
 <script>
 import { defineComponent, onMounted, ref } from 'vue'
 import { useRouter } from "vue-router/dist/vue-router"
+import { rest } from "boot/axios"
+import apis from "src/constants/apis"
+import { useAuthStore } from "stores/auth"
+import { bus } from "boot/global-event-bus"
 
 export default defineComponent({
   name :'App',
   setup :() => {
+    const auth = useAuthStore()
     const git = ref(process.env.git)
     const router = useRouter()
     onMounted(() => {
@@ -25,13 +30,18 @@ export default defineComponent({
     })
     const loadApplication = async () => {
       let schoolToken = window.localStorage.getItem(process.env.schoolToken)
-      if(schoolToken){
-        await router.push({name :'sign-in'})
-        console.log('app')
-      } else {
-        console.log('school-access')
-        await router.push({name :'school-access'})
-      }
+      if(!schoolToken || schoolToken === "undefined")  return await router.push({name :'school-access'})
+      let request = await rest.get(apis.public.school.get + '/' + schoolToken)
+      if(!request.status) return await router.push({name :'school-access'})
+      auth.setSchool(request.data)
+      let accessToken = window.localStorage.getItem(process.env.auth)
+      if(!accessToken || accessToken === "undefined") return await router.push({name :'sign-in'})
+      request = await rest.get(apis.public.school.account.access)
+      if(!request.status)  return await router.push({name :'sign-in'})
+      await auth.setAuthUser(request.data)
+      bus.$emit('auth:is_logged_in', auth.isLoggedIn)
+      await router.push({name :'dashboard-page'})
+      console.log('app')
     }
     return {git}
   }

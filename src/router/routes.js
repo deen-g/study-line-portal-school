@@ -12,7 +12,8 @@ const routes = [
     path: '/authorized',
     component: () => import('layouts/app-layout.vue'),
     children: [
-      { path: '',name:'dashboard-page', component: () => import('pages/IndexPage.vue') }
+      { path: '',name:'dashboard-page', component: () => import('pages/IndexPage.vue') },
+      { path: '',name:'web-pages-page', component: () => import('pages/manage-web-pages-page.vue') }
     ]
   },
 

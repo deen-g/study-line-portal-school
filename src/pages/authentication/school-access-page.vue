@@ -202,12 +202,14 @@ import apis from "src/constants/apis"
 import { rest } from "boot/axios"
 import { notifications } from "boot/notification"
 import { useRouter } from "vue-router/dist/vue-router"
+import { useAuthStore } from "stores/auth"
 
 export default {
   // name: 'PageName',
   setup :() => {
+    const auth = useAuthStore()
     const router = useRouter()
-    const is_access_form = ref(false)
+    const is_access_form = ref(true)
     const input = ref({
       name :'adeyemo international',
       address :'46 The Polygon',
@@ -221,8 +223,8 @@ export default {
       }
     })
     let access = ref({
-      code :'SL-TAE-0000001',
-      access_key :'PVU8UEJN4XEIFJRCP8GBR1HC5'
+      code :'SL-MAA-0000001',
+      access_key :'XGCN1RUECR0SMBO6H6IXMTVRQ'
     })
     const onSubmit = async () => {
       let school = null
@@ -234,6 +236,7 @@ export default {
       }
       if(school.status){
        await window.localStorage.setItem(process.env.schoolToken, school.data._id)
+        auth.setSchool(school.data)
         notifications.positive(is_access_form ? 'school accessed' : 'school created')
         await router.push({name :'sign-in'})
       }

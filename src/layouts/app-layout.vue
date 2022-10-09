@@ -2,19 +2,19 @@
   <q-layout view="lHh Lpr lFf">
     <q-header bordered class="bg-grey-2 text-primary">
       <q-bar class="q-electron-drag bg-primary text-white">
-        <q-icon name="laptop_chromebook" />
+        <q-icon name="laptop_chromebook"/>
         <div class="text-center" style="font-size: 13px">
         <span><u style="color: #21BA45; font-size: 13px">Study</u><span
           style="color: #cce1f6; font-size: 13px">Line</span></span>
           v{{ $q.version }}
         </div>
 
-        <q-space />
+        <q-space/>
 
-        <q-btn dense flat icon="minimize" @click="minimize" />
-        <q-btn dense flat icon="crop_square" @click="toggleMaximize" />
-        <q-btn dense flat icon="mdi-fullscreen" @click="toggleFullscreen" />
-        <q-btn dense flat icon="close" @click="closeApp" />
+        <q-btn dense flat icon="minimize" @click="minimize"/>
+        <q-btn dense flat icon="crop_square" @click="toggleMaximize"/>
+        <q-btn dense flat icon="mdi-fullscreen" @click="toggleFullscreen"/>
+        <q-btn dense flat icon="close" @click="closeApp"/>
       </q-bar>
       <q-toolbar>
         <q-btn
@@ -27,9 +27,9 @@
         />
 
         <q-toolbar-title>
-         <span style="cursor: pointer;" @click="$router.push({name:'index'})"><u
-           style="color: #21BA45; font-size: 33px">Study</u><sub
-           style="color: #1976D2; font-size: 22px">Line</sub></span>
+         <span style="cursor: pointer;" @click="$router.push({name:'index'})" class="text-capitalize">
+           {{school.name}}
+         </span>
         </q-toolbar-title>
         <div class="gt-sm">
           <search-menu-comp :borderless="false"/>
@@ -49,12 +49,12 @@
           dense
           @click="login"
         >
-          <q-chip size="sm" :color="auth.isLoggedIn?'teal':'red'" text-color="white">
+          <q-chip size="sm" :color="isLoggedIn?'teal':'red'" text-color="white">
             <q-avatar size="sm" color="white">
-              <img v-if="auth.isLoggedIn && auth.user.avatar" :src="auth.user.avatar">
+              <img v-if="isLoggedIn && account.avatar" :src="account.avatar">
               <img v-else src="~assets/user.png">
             </q-avatar>
-            {{ auth.isLoggedIn ? auth.user.acronym : 'login' }}
+            {{ isLoggedIn ? account.acronym : 'login' }}
           </q-chip>
         </q-btn>
       </q-toolbar>
@@ -86,21 +86,13 @@
             {{ page }}
 
           </q-item-label>
-          <q-btn
-            v-if="auth.isLoggedIn && !auth.isVerified"
-            color="orange"
-            size="sm"
-            icon-right="mdi-account-cancel-outline"
-            class="full-width"
-            @click="$router.push({name:'verify-account'})"
-            label="verify account"/>
           <EssentialLink
             v-for="link in essentialLinks"
             :key="link.title"
             v-bind="link"
           />
           <q-btn
-            v-if="auth.isLoggedIn"
+            v-if="isLoggedIn"
             color="negative"
             size="sm"
             icon-right="mdi-logout"
@@ -109,7 +101,7 @@
             label="logout"/>
         </q-list>
       </q-scroll-area>
-      <panel-profile-comp :auth="auth"/>
+      <panel-profile-comp/>
     </q-drawer>
     <q-drawer
       v-model="rightDrawerOpen"
@@ -139,38 +131,45 @@ import { rest } from "boot/axios"
 import { notifications } from "boot/notification"
 
 export default defineComponent({
-  name: 'AuthLayout',
+  name :'AuthLayout',
 
-  components: {
+  components :{
     PanelProfileComp,
     SearchMenuComp,
     EssentialLink
   },
 
-  setup () {
+  setup(){
     const auth = useAuthStore()
     const leftDrawerOpen = ref(false)
     const rightDrawerOpen = ref(false)
     const page = ref('dashboard')
-    const list = computed(() => {
-      return navigations.links()
-    })
+    const list = ref([])
     // eslint-disable-next-line no-unused-vars
     const router = useRouter()
+    let isLoggedIn = computed(() => {
+      return auth.isLoggedIn
+    })
+    let account = computed(() => {
+      return auth.getAccount
+    })
+    let school = computed(() => {
+      return auth.getSchool
+    })
     const login = async () => {
-      if (auth.isLoggedIn) {
+      if(isLoggedIn.value){
         console.log('isLoggedIn')
         // toggleRightDrawer()
       } else {
         console.log('login')
-        await router.push({ name: 'sign-in' })
+        await router.push({name :'sign-in'})
       }
     }
     const closeDrawer = () => {
       leftDrawerOpen.value = false
     }
     const logout = async () => {
-      const user = auth.getUser
+      const user = auth.getAccount
       const logout = await rest.get(apis.authorized.logout + `?id=${user._id}`)
       if(logout.status){
         window.localStorage.removeItem(process.env.auth)
@@ -179,8 +178,56 @@ export default defineComponent({
         await router.push({name :'sign-in'})
       }
     }
+    const loadWebUrl = async () => {
+      let listing = [{
+        hr :true
+      },
+        {
+          title :'Home',
+          icon :'home',
+          link :'index-page',
+          query :{page :'home-page'},
+          authorized :['web']
+        },
+        {
+          title :'About Us',
+          caption :'Little but on study line',
+          icon :'mdi-help-network',
+          link :'index-page',
+          query :{page :'about-page'},
+          authorized :['web']
+        },
+        {
+          title :'Services',
+          caption :'Our services and features',
+          icon :'mdi-face-agent',
+          link :'index-page',
+          query :{page :'services-page'},
+          authorized :['web']
+        },
+        {
+          title :'Contact Us',
+          caption :'Get connected in real time',
+          icon :'mdi-card-account-phone',
+          link :'index-page',
+          query :{page :'contact-us-page'},
+          authorized :['web']
+        }]
+      let request = await rest.get(apis.authorized.webpages.structure.get)
+      console.log(request)
+      if(request.status){
+        listing = request.data.content
+        // return request.data
+      }
+
+      return listing
+    }
     onMounted(async () => {
-      bus.$on('auth:is_logged_in', () => {
+
+      bus.$on('auth:is_logged_in', async () => {
+        let listing = await loadWebUrl()
+        list.value = await navigations.links(listing)
+        console.log('logii')
       })
     })
     onUnmounted(() => {
@@ -194,40 +241,45 @@ export default defineComponent({
     const toggleRightDrawer = () => {
       rightDrawerOpen.value = !rightDrawerOpen.value
     }
-    function minimize () {
-      if (process.env.MODE === 'electron') {
+
+    function minimize(){
+      if(process.env.MODE === 'electron'){
         console.log(window.winAPI)
         window.winAPI.minimize()
       }
     }
 
-    function toggleMaximize () {
-      if (process.env.MODE === 'electron') {
+    function toggleMaximize(){
+      if(process.env.MODE === 'electron'){
         window.winAPI.toggleMaximize()
       }
     }
 
-    function toggleFullscreen () {
-      if (process.env.MODE === 'electron') {
+    function toggleFullscreen(){
+      if(process.env.MODE === 'electron'){
         window.winAPI.toggleFullscreen()
       }
     }
-    function closeApp () {
-      if (process.env.MODE === 'electron') {
+
+    function closeApp(){
+      if(process.env.MODE === 'electron'){
         window.winAPI.close()
       }
     }
+
     return {
       page,
-      essentialLinks: list,
+      essentialLinks :list,
       leftDrawerOpen,
       toggleLeftDrawer,
       rightDrawerOpen,
       toggleRightDrawer,
-      auth,
+      isLoggedIn,
+      account,
+      school,
       logout,
       login,
-      closeDrawer,minimize, toggleMaximize,toggleFullscreen, closeApp
+      closeDrawer, minimize, toggleMaximize, toggleFullscreen, closeApp
     }
   }
 })

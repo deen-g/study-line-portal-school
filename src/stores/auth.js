@@ -4,16 +4,21 @@ import { bus } from 'boot/global-event-bus'
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     auth: {},
-    user: {},
     school: {}
   }),
 
   getters: {
     isLoggedIn (state) {
-      return Object.prototype.hasOwnProperty.call(state.user, '_id')
+      return Object.prototype.hasOwnProperty.call(state.auth, '_id')
     },
     isVerified (state) {
-      return !!state.user.is_verified
+      return true
+    },
+    getRole (state) {
+      return state.auth.role
+    },
+    getRoleAbilities (state) {
+      return state.auth.role.ability_ids
     },
     getSchool (state) {
       return state.school
@@ -21,11 +26,11 @@ export const useAuthStore = defineStore('auth', {
     hasSchool (state) {
       return Object.prototype.hasOwnProperty.call(state.school, '_id')
     },
-    userId (state) {
-      return state.user._id
+    accountId (state) {
+      return state.auth._id
     },
-    getUser (state) {
-      return state.user
+    getAccount (state) {
+      return state.auth
     },
   },
 
@@ -33,28 +38,20 @@ export const useAuthStore = defineStore('auth', {
     clearAuthUser () {
       bus.$emit('emit:account:authenticate', false)
       this.auth = {}
-      this.user = {}
     },
     setAuthUser (data) {
-      bus.$emit('emit:account:authenticate', Object.hasOwnProperty.call(data.user, '_id'))
-      this.auth = data
-      if (data.user.name) {
-        const matches = data.user.name.match(/\b(\w)/g)
-        data.user.acronym = matches.join('')
-      }
-      this.user = data.user
-    },
-    setUser (data) {
+      bus.$emit('emit:account:authenticate', Object.hasOwnProperty.call(data, '_id'))
       if (data.name) {
-        const matches = data.user.name.match(/\b(\w)/g)
-        data.user.acronym = matches.join('')
+        const matches = data.name.match(/\b(\w)/g)
+        data.acronym = matches.join('')
       }
-      this.user = data
+      console.info(data.role)
+      this.auth = data
     },
     setVerification (data) {
-      let user = this.user
-      user.is_verified = data.is_verified
-      this.user = user
+      let auth = this.auth
+      auth.is_verified = data.is_verified
+      this.auth = auth
     },
     setSchool (data) {
       this.school = data
